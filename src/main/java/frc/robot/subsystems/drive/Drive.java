@@ -14,16 +14,13 @@
 package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.subsystems.drive.DriveConstants.CompSpeed;
+import static frc.robot.subsystems.drive.DriveConstants.DemoSpeed;
+import static frc.robot.subsystems.drive.DriveConstants.ProgSpeed;
 import static frc.robot.subsystems.drive.DriveConstants.driveBaseRadius;
 import static frc.robot.subsystems.drive.DriveConstants.maxSpeedMetersPerSec;
 import static frc.robot.subsystems.drive.DriveConstants.moduleTranslations;
 import static frc.robot.subsystems.drive.DriveConstants.ppConfig;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -33,7 +30,6 @@ import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
-
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
@@ -60,8 +56,14 @@ import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.LocalADStarAK;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase implements Vision.VisionConsumer {
+    private static double speedPercent;
+
     static final Lock odometryLock = new ReentrantLock();
     private final GyroIO gyroIO;
     private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
@@ -85,13 +87,23 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
     public Drive(GyroIO gyroIO, ModuleIO flModuleIO, ModuleIO frModuleIO, ModuleIO blModuleIO, ModuleIO brModuleIO) {
         this.gyroIO = gyroIO;
+
+        if (Constants.robot == Constants.Bot.Demo) {
+            speedPercent = DemoSpeed;
+        } else if (Constants.robot == Constants.Bot.Prog) {
+            speedPercent = ProgSpeed;
+        } else {
+            speedPercent = CompSpeed;
+        }
+
         modules[0] = new Module(flModuleIO, 0);
         modules[1] = new Module(frModuleIO, 1);
         modules[2] = new Module(blModuleIO, 2);
         modules[3] = new Module(brModuleIO, 3);
         ChassisSpeeds currentSpeeds = getChassisSpeeds(); // Method to get current robot-relative chassis speeds
         SwerveModuleState[] currentStates = getModuleStates();
-        prevSetpoints = new SwerveSetpoint(currentSpeeds, currentStates, DriveFeedforwards.zeros(DriveConstants.numModules));
+        prevSetpoints =
+                new SwerveSetpoint(currentSpeeds, currentStates, DriveFeedforwards.zeros(DriveConstants.numModules));
 
         // Usage reporting for swerve template
         HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
@@ -118,9 +130,12 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
         });
 
         setpointGenerator = new SwerveSetpointGenerator(
-            ppConfig, // The robot configuration. This is the same config used for generating trajectories and running path following commands.
-            Units.rotationsToRadians(10.0) // The max rotation velocity of a swerve module in radians per second. This should probably be stored in your Constants file
-        );
+                ppConfig, // The robot configuration. This is the same config used for generating trajectories and
+                // running path following commands.
+                Units.rotationsToRadians(
+                        10.0) // The max rotation velocity of a swerve module in radians per second. This should
+                // probably be stored in your Constants file
+                );
 
         // Configure SysId
         sysId = new SysIdRoutine(
@@ -192,18 +207,17 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
      */
     public void runVelocity(ChassisSpeeds speeds) {
         // Calculate module setpoints
+        speeds.times(speedPercent);
         speeds.discretize(0.02);
-        SwerveSetpoint setpointStates = setpointGenerator.generateSetpoint(
-            prevSetpoints,
-            speeds,
-            0.02);
+        SwerveSetpoint setpointStates = setpointGenerator.generateSetpoint(prevSetpoints, speeds, 0.02);
 
-        
         // SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
+
+
         SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates.moduleStates(), maxSpeedMetersPerSec);
 
         // Log unoptimized setpoints
-        Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+        Logger.recordOutput("SwerveStates/Setpoints", setpointStates.moduleStates());
         Logger.recordOutput("SwerveChassisSpeeds/Setpoints", speeds);
 
         // Send setpoints to modules

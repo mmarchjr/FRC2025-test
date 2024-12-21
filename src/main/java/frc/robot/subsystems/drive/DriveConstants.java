@@ -27,6 +27,11 @@ import org.ironmaple.simulation.drivesims.SwerveModuleSimulation.WHEEL_GRIP;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 
 public class DriveConstants {
+
+    public static final double CompSpeed = 1;
+    public static final double DemoSpeed = 0.5;
+    public static final double ProgSpeed = 0.75;
+
     public static final double maxSpeedMetersPerSec = 4.8;
     public static final int numModules = 4;
     public static final double odometryFrequency = 100.0; // Hz
