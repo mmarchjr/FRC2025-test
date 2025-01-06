@@ -15,18 +15,17 @@ package frc.robot.subsystems.drive;
 
 import static frc.robot.subsystems.drive.DriveConstants.odometryFrequency;
 
-import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
+import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.SPI;
 import java.util.Queue;
 
 /** IO implementation for NavX. */
 public class GyroIONavX implements GyroIO {
-    private final AHRS navX = new AHRS(NavXComType.kMXP_SPI, (byte) odometryFrequency);
+    private final AHRS navX = new AHRS(SPI.Port.kMXP, (byte) odometryFrequency);
     private final Queue<Double> yawPositionQueue;
     private final Queue<Double> yawTimestampQueue;
-    double[] accelerations;
 
     public GyroIONavX() {
         yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
@@ -38,10 +37,7 @@ public class GyroIONavX implements GyroIO {
         inputs.connected = navX.isConnected();
         inputs.yawPosition = Rotation2d.fromDegrees(-navX.getAngle());
         inputs.yawVelocityRadPerSec = Units.degreesToRadians(-navX.getRawGyroZ());
-        accelerations[0] = navX.getRawAccelX();
-        accelerations[1] = navX.getRawAccelY();
-        accelerations[2] = navX.getRawAccelZ();
-        inputs.accelerations = this.accelerations;
+
         inputs.odometryYawTimestamps =
                 yawTimestampQueue.stream().mapToDouble((Double value) -> value).toArray();
         inputs.odometryYawPositions = yawPositionQueue.stream()
@@ -49,5 +45,8 @@ public class GyroIONavX implements GyroIO {
                 .toArray(Rotation2d[]::new);
         yawTimestampQueue.clear();
         yawPositionQueue.clear();
+        inputs.accelerations[0] = navX.getWorldLinearAccelX(); // Store X acceleration
+        inputs.accelerations[1] = navX.getWorldLinearAccelY(); // Store Y acceleration
+        inputs.accelerations[2] = navX.getWorldLinearAccelZ(); // Store Z acceleration
     }
 }

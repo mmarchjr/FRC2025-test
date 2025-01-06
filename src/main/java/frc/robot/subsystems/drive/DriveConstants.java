@@ -21,19 +21,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
-import org.ironmaple.simulation.drivesims.GyroSimulation;
-import org.ironmaple.simulation.drivesims.SwerveModuleSimulation;
-import org.ironmaple.simulation.drivesims.SwerveModuleSimulation.WHEEL_GRIP;
+import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
+import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 
 public class DriveConstants {
-
-    public static final double CompSpeed = 1;
-    public static final double DemoSpeed = 0.5;
-    public static final double ProgSpeed = 0.75;
-
     public static final double maxSpeedMetersPerSec = 4.8;
-    public static final int numModules = 4;
     public static final double odometryFrequency = 100.0; // Hz
     public static final double trackWidth = Units.inchesToMeters(26.5);
     public static final double wheelBase = Units.inchesToMeters(26.5);
@@ -65,11 +58,11 @@ public class DriveConstants {
     public static final int backRightTurnCanId = 8;
 
     // Drive motor configuration
-    public static final int driveMotorCurrentLimit = 50;
+    public static final int driveMotorCurrentLimit = 60;
     public static final double wheelRadiusMeters = Units.inchesToMeters(1.5);
     public static final double driveMotorReduction =
             (45.0 * 22.0) / (14.0 * 15.0); // MAXSwerve with 14 pinion teeth and 22 spur teeth
-    public static final DCMotor driveGearbox = DCMotor.getNEO(1);
+    public static final DCMotor driveGearbox = DCMotor.getNeoVortex(1);
 
     // Drive encoder configuration
     public static final double driveEncoderPositionFactor =
@@ -107,9 +100,9 @@ public class DriveConstants {
     public static final double turnPIDMaxInput = 2 * Math.PI; // Radians
 
     // PathPlanner configuration
-    public static final double robotMassKg = 74.088;
+    public static final double robotMassKg = 45;
     public static final double robotMOI = 6.883;
-    public static final double wheelCOF = WHEEL_GRIP.BLUE_NITRILE_TREAD.cof;
+    public static final double wheelCOF = 1.2;
     public static final RobotConfig ppConfig = new RobotConfig(
             robotMassKg,
             robotMOI,
@@ -125,8 +118,8 @@ public class DriveConstants {
     public static final DriveTrainSimulationConfig mapleSimConfig = DriveTrainSimulationConfig.Default()
             .withCustomModuleTranslations(moduleTranslations)
             .withRobotMass(Kilogram.of(robotMassKg))
-            .withGyro(GyroSimulation.getPigeon2())
-            .withSwerveModule(() -> new SwerveModuleSimulation(
+            .withGyro(COTS.ofPigeon2())
+            .withSwerveModule(new SwerveModuleSimulationConfig(
                     driveGearbox,
                     turnGearbox,
                     driveMotorReduction,

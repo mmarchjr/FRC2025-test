@@ -13,17 +13,15 @@
 
 package frc.robot.subsystems.drive;
 
+import com.revrobotics.REVLibError;
+import com.revrobotics.spark.SparkBase;
+import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.DoubleSupplier;
-
-import com.revrobotics.REVLibError;
-import com.revrobotics.spark.SparkBase;
-
-import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.RobotController;
 
 /**
  * Provides an interface for asynchronously reading high-frequency measurements to a set of queues.
@@ -40,7 +38,7 @@ public class SparkOdometryThread {
     private final List<Queue<Double>> timestampQueues = new ArrayList<>();
 
     private static SparkOdometryThread instance = null;
-    private final Notifier notifier = new Notifier(this::run);
+    private Notifier notifier = new Notifier(this::run);
 
     public static SparkOdometryThread getInstance() {
         if (instance == null) {

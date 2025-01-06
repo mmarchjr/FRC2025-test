@@ -13,23 +13,18 @@
 
 package frc.robot.subsystems.drive;
 
-import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.subsystems.drive.DriveConstants.CompSpeed;
-import static frc.robot.subsystems.drive.DriveConstants.DemoSpeed;
-import static frc.robot.subsystems.drive.DriveConstants.ProgSpeed;
-import static frc.robot.subsystems.drive.DriveConstants.driveBaseRadius;
-import static frc.robot.subsystems.drive.DriveConstants.maxSpeedMetersPerSec;
-import static frc.robot.subsystems.drive.DriveConstants.moduleTranslations;
-import static frc.robot.subsystems.drive.DriveConstants.ppConfig;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.pathfinding.Pathfinding;
-import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.PathPlannerLogging;
-import com.pathplanner.lib.util.swerve.SwerveSetpoint;
-import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
+
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
@@ -44,7 +39,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.Volts;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -54,56 +49,40 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
+import static frc.robot.subsystems.drive.DriveConstants.driveBaseRadius;
+import static frc.robot.subsystems.drive.DriveConstants.maxSpeedMetersPerSec;
+import static frc.robot.subsystems.drive.DriveConstants.moduleTranslations;
+import static frc.robot.subsystems.drive.DriveConstants.ppConfig;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.LocalADStarAK;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase implements Vision.VisionConsumer {
-    private static double speedPercent;
-
     static final Lock odometryLock = new ReentrantLock();
     private final GyroIO gyroIO;
     private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
     private final Module[] modules = new Module[4]; // FL, FR, BL, BR
-    SwerveSetpointGenerator setpointGenerator;
     private final SysIdRoutine sysId;
     private final Alert gyroDisconnectedAlert =
             new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
-    private SwerveSetpoint prevSetpoints;
-    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
+
+    private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
     private Rotation2d rawGyroRotation = new Rotation2d();
-    private SwerveModulePosition[] lastModulePositions = // For delta tracking
+    private final SwerveModulePosition[] lastModulePositions = // For delta tracking
             new SwerveModulePosition[] {
                 new SwerveModulePosition(),
                 new SwerveModulePosition(),
                 new SwerveModulePosition(),
                 new SwerveModulePosition()
             };
-    private SwerveDrivePoseEstimator poseEstimator =
+    private final SwerveDrivePoseEstimator poseEstimator =
             new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
 
     public Drive(GyroIO gyroIO, ModuleIO flModuleIO, ModuleIO frModuleIO, ModuleIO blModuleIO, ModuleIO brModuleIO) {
         this.gyroIO = gyroIO;
-
-        if (Constants.robot == Constants.Bot.Demo) {
-            speedPercent = DemoSpeed;
-        } else if (Constants.robot == Constants.Bot.Prog) {
-            speedPercent = ProgSpeed;
-        } else {
-            speedPercent = CompSpeed;
-        }
-
         modules[0] = new Module(flModuleIO, 0);
         modules[1] = new Module(frModuleIO, 1);
         modules[2] = new Module(blModuleIO, 2);
         modules[3] = new Module(brModuleIO, 3);
-        ChassisSpeeds currentSpeeds = getChassisSpeeds(); // Method to get current robot-relative chassis speeds
-        SwerveModuleState[] currentStates = getModuleStates();
-        prevSetpoints =
-                new SwerveSetpoint(currentSpeeds, currentStates, DriveFeedforwards.zeros(DriveConstants.numModules));
 
         // Usage reporting for swerve template
         HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
@@ -122,20 +101,12 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
                 () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
                 this);
         Pathfinding.setPathfinder(new LocalADStarAK());
-        PathPlannerLogging.setLogActivePathCallback((activePath) -> {
+        PathPlannerLogging.setLogActivePathCallback(activePath -> {
             Logger.recordOutput("Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
         });
-        PathPlannerLogging.setLogTargetPoseCallback((targetPose) -> {
+        PathPlannerLogging.setLogTargetPoseCallback(targetPose -> {
             Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
         });
-
-        setpointGenerator = new SwerveSetpointGenerator(
-                ppConfig, // The robot configuration. This is the same config used for generating trajectories and
-                // running path following commands.
-                Units.rotationsToRadians(
-                        10.0) // The max rotation velocity of a swerve module in radians per second. This should
-                // probably be stored in your Constants file
-                );
 
         // Configure SysId
         sysId = new SysIdRoutine(
@@ -207,21 +178,17 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
      */
     public void runVelocity(ChassisSpeeds speeds) {
         // Calculate module setpoints
-        speeds.times(speedPercent);
-        speeds.discretize(0.02);
-        SwerveSetpoint setpointStates = setpointGenerator.generateSetpoint(prevSetpoints, speeds, 0.02);
-
-        // SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
-
-        SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates.moduleStates(), maxSpeedMetersPerSec);
+        speeds = ChassisSpeeds.discretize(speeds, 0.02);
+        SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxSpeedMetersPerSec);
 
         // Log unoptimized setpoints
-        Logger.recordOutput("SwerveStates/Setpoints", setpointStates.moduleStates());
+        Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
         Logger.recordOutput("SwerveChassisSpeeds/Setpoints", speeds);
 
         // Send setpoints to modules
         for (int i = 0; i < 4; i++) {
-            modules[i].runSetpoint(setpointStates.moduleStates()[i]);
+            modules[i].runSetpoint(setpointStates[i]);
         }
 
         // Log optimized setpoints (runSetpoint mutates each state)
@@ -336,5 +303,8 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
     /** Returns the maximum angular speed in radians per sec. */
     public double getMaxAngularSpeedRadPerSec() {
         return maxSpeedMetersPerSec / driveBaseRadius;
+    }
+    public GyroIOInputsAutoLogged getGyroInputs() {
+        return gyroInputs;
     }
 }

@@ -2,27 +2,25 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems.drive.Accelerometer;
+package frc.robot.subsystems.drive.accelerometer;
 
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.drive.GyroIO;
-import frc.robot.subsystems.drive.GyroIOInputsAutoLogged;
 import org.littletonrobotics.junction.Logger;
 
-public class Gforce extends SubsystemBase {
-    @SuppressWarnings("unused")
-    private GyroIO gyro;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.drive.GyroIOInputsAutoLogged;
 
-    private double MaxGForce = 0;
-    private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
+public class Gforce extends SubsystemBase {
+
+    private double maxGForce = 0;
+    double[] xyzDps;
+    private final GyroIOInputsAutoLogged gyroInputs;
 
     /** Creates a new Accelerometer. */
-    public Gforce(GyroIO gyro) {
-        this.gyro = gyro;
+    public Gforce(GyroIOInputsAutoLogged inputs) {
+        this.gyroInputs = inputs;
     }
 
     public double getOverallGForce() {
-        double[] xyzDps = new double[3];
         xyzDps = gyroInputs.accelerations;
         // Convert accelerometer values from m/s^2 to G (1 G = 9.81 m/s^2)
         double[] gForces = new double[3];
@@ -36,10 +34,10 @@ public class Gforce extends SubsystemBase {
 
     @Override
     public void periodic() {
-        double Gforce = getOverallGForce();
-        if (Gforce > MaxGForce) {
-            MaxGForce = Gforce;
-            Logger.recordOutput("Accelerometer/Gforce", MaxGForce);
+        double gForce = getOverallGForce();
+        if (gForce > maxGForce) {
+            maxGForce = gForce;
+            Logger.recordOutput("Accelerometer/Gforce", maxGForce);
         }
 
         // This method will be called once per scheduler run

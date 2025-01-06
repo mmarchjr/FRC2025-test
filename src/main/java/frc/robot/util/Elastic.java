@@ -8,6 +8,7 @@ package frc.robot.util;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.StringPublisher;
@@ -26,6 +27,7 @@ public final class Elastic {
      *
      * @param notification the {@link Notification} object containing notification details
      */
+    @SuppressWarnings("CallToPrintStackTrace")
     public static void sendNotification(Notification notification) {
         try {
             publisher.set(objectMapper.writeValueAsString(notification));

@@ -13,18 +13,20 @@
 
 package frc.robot.subsystems.drive;
 
-import static frc.robot.subsystems.drive.DriveConstants.*;
+import java.util.Queue;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.measure.measure.Angle;
-import edu.wpi.first.units.measure.measure.AngularVelocity;
-import java.util.Queue;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import static frc.robot.subsystems.drive.DriveConstants.odometryFrequency;
+import static frc.robot.subsystems.drive.DriveConstants.pigeonCanId;
 
 /** IO implementation for Pigeon 2. */
 public class GyroIOPigeon2 implements GyroIO {
@@ -33,7 +35,6 @@ public class GyroIOPigeon2 implements GyroIO {
     private final Queue<Double> yawPositionQueue;
     private final Queue<Double> yawTimestampQueue;
     private final StatusSignal<AngularVelocity> yawVelocity = pigeon.getAngularVelocityZWorld();
-    double[] accelerations;
 
     public GyroIOPigeon2() {
         pigeon.getConfigurator().apply(new Pigeon2Configuration());
@@ -51,16 +52,14 @@ public class GyroIOPigeon2 implements GyroIO {
         inputs.yawPosition = Rotation2d.fromDegrees(yaw.getValueAsDouble());
         inputs.yawVelocityRadPerSec = Units.degreesToRadians(yawVelocity.getValueAsDouble());
 
-        accelerations[0] = pigeon.getAccelerationX().getValueAsDouble();
-        accelerations[1] = pigeon.getAccelerationY().getValueAsDouble();
-        accelerations[2] = pigeon.getAccelerationZ().getValueAsDouble();
-        inputs.accelerations = this.accelerations;
-
         inputs.odometryYawTimestamps =
                 yawTimestampQueue.stream().mapToDouble((Double value) -> value).toArray();
         inputs.odometryYawPositions =
                 yawPositionQueue.stream().map(Rotation2d::fromDegrees).toArray(Rotation2d[]::new);
         yawTimestampQueue.clear();
         yawPositionQueue.clear();
+        inputs.accelerations[0] = pigeon.getAccelerationX().getValueAsDouble();
+        inputs.accelerations[1] = pigeon.getAccelerationY().getValueAsDouble();
+        inputs.accelerations[2] = pigeon.getAccelerationZ().getValueAsDouble();
     }
 }

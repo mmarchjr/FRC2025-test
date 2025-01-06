@@ -13,16 +13,13 @@
 
 package frc.robot.subsystems.drive;
 
-import static frc.robot.subsystems.drive.DriveConstants.wheelRadiusMeters;
+import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import frc.robot.util.Elastic;
-import frc.robot.util.Elastic.Notification;
-import frc.robot.util.Elastic.Notification.NotificationLevel;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -32,9 +29,6 @@ public class Module {
 
     private final Alert driveDisconnectedAlert;
     private final Alert turnDisconnectedAlert;
-    private final Notification drivedisconnectnotification;
-    private final Notification turndisconnectnotification;
-
     private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
     public Module(ModuleIO io, int index) {
@@ -44,14 +38,6 @@ public class Module {
                 new Alert("Disconnected drive motor on module " + Integer.toString(index) + ".", AlertType.kError);
         turnDisconnectedAlert =
                 new Alert("Disconnected turn motor on module " + Integer.toString(index) + ".", AlertType.kError);
-        drivedisconnectnotification = new Elastic.Notification(
-                NotificationLevel.ERROR,
-                "Drive Motor Disconnected",
-                "Disconnected drive motor on module " + Integer.toString(index) + ".");
-        turndisconnectnotification = new Elastic.Notification(
-                NotificationLevel.ERROR,
-                "Turn Motor Disconnected",
-                "Disconnected turn motor on module " + Integer.toString(index) + ".");
     }
 
     public void periodic() {
@@ -68,7 +54,8 @@ public class Module {
         }
 
         // Update alerts
-        processAlerts();
+        driveDisconnectedAlert.set(!inputs.driveConnected);
+        turnDisconnectedAlert.set(!inputs.turnConnected);
     }
 
     /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */
@@ -137,16 +124,5 @@ public class Module {
     /** Returns the module velocity in rad/sec. */
     public double getFFCharacterizationVelocity() {
         return inputs.driveVelocityRadPerSec;
-    }
-
-    private void processAlerts() {
-        driveDisconnectedAlert.set(!inputs.driveConnected);
-        if (!inputs.driveConnected) {
-            Elastic.sendNotification(drivedisconnectnotification.withDisplaySeconds(5.0));
-        }
-        turnDisconnectedAlert.set(!inputs.turnConnected);
-        if (!inputs.turnConnected) {
-            Elastic.sendNotification(turndisconnectnotification.withDisplaySeconds(5.0));
-        }
     }
 }
