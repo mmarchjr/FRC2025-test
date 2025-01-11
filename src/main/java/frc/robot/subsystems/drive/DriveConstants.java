@@ -17,13 +17,16 @@ import static edu.wpi.first.units.Units.*;
 
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
-import org.ironmaple.simulation.drivesims.COTS;
+
+import org.ironmaple.simulation.drivesims.SwerveModuleSimulation;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
-import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
+import org.ironmaple.simulation.drivesims.configs;;
+
 
 public class DriveConstants {
     public static final double maxSpeedMetersPerSec = 4.8;
@@ -102,7 +105,7 @@ public class DriveConstants {
     // PathPlanner configuration
     public static final double robotMassKg = 45;
     public static final double robotMOI = 6.883;
-    public static final double wheelCOF = 1.2;
+    public static final double wheelCOF = COTS
     public static final RobotConfig ppConfig = new RobotConfig(
             robotMassKg,
             robotMOI,
@@ -119,7 +122,7 @@ public class DriveConstants {
             .withCustomModuleTranslations(moduleTranslations)
             .withRobotMass(Kilogram.of(robotMassKg))
             .withGyro(COTS.ofPigeon2())
-            .withSwerveModule(new SwerveModuleSimulationConfig(
+            .withSwerveModule(new SwerveModuleSimulation(
                     driveGearbox,
                     turnGearbox,
                     driveMotorReduction,

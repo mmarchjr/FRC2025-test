@@ -20,10 +20,10 @@ import edu.wpi.first.wpilibj.RobotBase;
  * the value of "simMode" to switch between "sim" (physics sim) and "replay" (log replay from a file).
  */
 public final class Constants {
-    public static final Mode simMode = Mode.SIM;
-    public static final Mode currentMode = RobotBase.isReal() ? Mode.REAL : simMode;
+    public static final ROBOT_MODE SIM_MODE = ROBOT_MODE.SIM;
+    public static final ROBOT_MODE CURRENT_MODE = RobotBase.isReal() ? ROBOT_MODE.REAL : SIM_MODE;
 
-    public static enum Mode {
+    public enum ROBOT_MODE {
         /** Running on a real robot. */
         REAL,
 

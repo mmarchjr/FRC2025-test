@@ -13,6 +13,9 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.Threads;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.ironmaple.simulation.SimulatedArena;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -21,10 +24,6 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
-
-import edu.wpi.first.wpilibj.Threads;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to each mode, as
@@ -51,7 +50,7 @@ public class Robot extends LoggedRobot {
         Logger.recordMetadata("GitDirty", gitDirty);
 
         // Set up data receivers & replay source
-        switch (Constants.currentMode) {
+        switch (Constants.CURRENT_MODE) {
             case REAL -> {
                 // Running on a real robot, log to a USB stick ("/U/logs")
                 Logger.addDataReceiver(new WPILOGWriter());
@@ -59,7 +58,7 @@ public class Robot extends LoggedRobot {
             }
 
             case SIM -> // Running a physics simulator, log to NT
-                Logger.addDataReceiver(new NT4Publisher());
+            Logger.addDataReceiver(new NT4Publisher());
 
             case REPLAY -> {
                 // Replaying a log, set up replay source
@@ -107,9 +106,9 @@ public class Robot extends LoggedRobot {
     /** This function is called periodically when disabled. */
     @Override
     public void disabledPeriodic() {
-         /* Not Needed right now */ 
-         /* Possibly add brake timer */
-        }
+        /* Not Needed right now */
+        /* Possibly add brake timer */
+    }
 
     /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
     @Override
@@ -125,7 +124,7 @@ public class Robot extends LoggedRobot {
     /** This function is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic() {
-        /* Not Needed right now */ 
+        /* Not Needed right now */
     }
 
     /** This function is called once when teleop is enabled. */
@@ -143,8 +142,8 @@ public class Robot extends LoggedRobot {
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
-        /* Should be empty */ 
-        /* Use robotcontainer */ 
+        /* Should be empty */
+        /* Use robotcontainer */
     }
 
     /** This function is called once when test mode is enabled. */
@@ -157,14 +156,14 @@ public class Robot extends LoggedRobot {
     /** This function is called periodically during test mode. */
     @Override
     public void testPeriodic() {
-        /* Not Needed right now */ 
-        /* Use robotContainer */ 
+        /* Not Needed right now */
+        /* Use robotContainer */
     }
 
     /** This function is called once when the robot is first started up. */
     @Override
     public void simulationInit() {
-        /* Uses robotcontainer */ 
+        /* Uses robotcontainer */
     }
 
     /** This function is called periodically whilst in simulation. */

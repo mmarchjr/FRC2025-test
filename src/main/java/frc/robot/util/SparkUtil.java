@@ -13,18 +13,16 @@
 
 package frc.robot.util;
 
+import static edu.wpi.first.units.Units.Seconds;
+
+import com.revrobotics.REVLibError;
+import com.revrobotics.spark.SparkBase;
+import edu.wpi.first.wpilibj.Timer;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
-
 import org.ironmaple.simulation.SimulatedArena;
-
-import com.revrobotics.REVLibError;
-import com.revrobotics.spark.SparkBase;
-
-import static edu.wpi.first.units.Units.Seconds;
-import edu.wpi.first.wpilibj.Timer;
 
 public class SparkUtil {
     /** Stores whether any error was has been detected by other utility methods. */

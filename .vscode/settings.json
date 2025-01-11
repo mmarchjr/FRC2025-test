@@ -61,5 +61,9 @@
     "edu.wpi.first.math.**.struct.*",
     null
   ],
-  "java.format.settings.url": ".vscode/java-formatter.xml"
+  "java.format.settings.url": ".vscode/java-formatter.xml",
+  "sonarlint.connectedMode.project": {
+    "connectionId": "mmarchjr",
+    "projectKey": "mmarchjr_FRC2025-test"
+  }
 }
